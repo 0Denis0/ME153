@@ -149,7 +149,7 @@ void loop() {
 
   
   //PID control:
-  float r = -15; //angle in degrees. from +x. Clockwise angle is positive
+  float r = 90; //angle in degrees. from +x. Clockwise angle is positive
   float e = r - roll;
 
   float k_p = 8;
@@ -180,11 +180,13 @@ void loop() {
   if (rightSpeed > 255){rightSpeed = 255;}
 
 
+//  leftSpeed = 255;
+//  rightSpeed = 255;
+  setMotorSpeeds(leftSpeed, rightSpeed);
+
   Serial.print("Motor speeds L/R: ");
   Serial.print(leftSpeed);
   Serial.print("/");
   Serial.println(rightSpeed);
-
-  setMotorSpeeds(leftSpeed, rightSpeed);
   delay(10);
 }
