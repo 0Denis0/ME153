@@ -159,25 +159,32 @@ void loop() {
   rightSpeed = 255*motorDirection;
 
   if (roll > r + 2){
-    leftSpeed -= abs(u);
-    if (leftSpeed < 0) {leftSpeed = 0;}
+    leftSpeed  -= abs(u);
+    rightSpeed += abs(u);
+
     Serial.print("\t\tTurning Left by u= ");
     Serial.print(u);
     Serial.println();
   }
   else if (roll < r - 2){
     rightSpeed -= abs(u);
-    if (rightSpeed < 0) {rightSpeed = 0;}
+    leftSpeed  += abs(u);
 
     Serial.print("\t\tTurning Right by u= ");
     Serial.print(u);
     Serial.println();
   }
+  if (leftSpeed < 0) {leftSpeed = 0;}
+  if (leftSpeed > 255) {leftSpeed = 255;}
+  if (rightSpeed < 0) {rightSpeed = 0;}
+  if (rightSpeed > 255){rightSpeed = 255;}
+
+
   Serial.print("Motor speeds L/R: ");
   Serial.print(leftSpeed);
   Serial.print("/");
   Serial.println(rightSpeed);
-  
+
   setMotorSpeeds(leftSpeed, rightSpeed);
   delay(10);
 }
