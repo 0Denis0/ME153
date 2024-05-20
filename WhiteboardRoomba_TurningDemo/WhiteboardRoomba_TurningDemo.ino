@@ -1,3 +1,17 @@
+/*
+    MPU6050 Triple Axis Gyroscope & Accelerometer. Pitch & Roll Accelerometer Example.
+    Read more: http://www.jarzebski.pl/arduino/czujniki-i-sensory/3-osiowy-zyroskop-i-akcelerometr-mpu6050.html
+    GIT: https://github.com/jarzebski/Arduino-MPU6050
+    Web: http://www.jarzebski.pl
+    (c) 2014 by Korneliusz Jarzebski
+*/
+//Include libraries
+#include <Wire.h>
+#include <MPU6050.h>
+
+MPU6050 mpu;
+
+
 // Define motor control pins for the left motor
 const int enableLeftPin = 11;
 const int input1LeftPin = 13;
@@ -16,7 +30,7 @@ const int motorToggleButtonPin = 3;
 const int directionFlipButtonPin = 2;
 
 // Define variable for speed coefficient
-int speedCoefficient = 0;
+int speedCoefficient = 1;
 
 // Variable to keep track of motor state
 bool motorsOn = true;
@@ -65,15 +79,51 @@ void setup() {
   // Set button pins as inputs
   pinMode(motorToggleButtonPin, INPUT_PULLUP);
   pinMode(directionFlipButtonPin, INPUT_PULLUP);
+
+  Serial.begin(115200);
+
+  Serial.println("Initialize MPU6050");
+
+  while(!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
+  {
+    Serial.println("Could not find a valid MPU6050 sensor, check wiring!");
+    delay(500);
+  }
+
+  
 }
 
 void loop() {
+  unsigned long time_ms; //time in milliseconds since program started
+  time_ms = millis();
+  int leftSpeed;
+  int rightSpeed;
+  //Read the accel-orientation
+  
+  // Read normalized values 
+  Vector normAccel = mpu.readNormalizeAccel();
+
+  // Calculate Pitch & Roll
+//  int pitch = -(atan2(normAccel.XAxis, sqrt(normAccel.YAxis*normAccel.YAxis + normAccel.ZAxis*normAccel.ZAxis))*180.0)/M_PI;
+//  int roll = (atan2(normAccel.YAxis, normAccel.ZAxis)*180.0)/M_PI;
+
+  float pitch = -(atan2(normAccel.XAxis, sqrt(normAccel.YAxis*normAccel.YAxis + normAccel.ZAxis*normAccel.ZAxis))*180.0)/M_PI;
+  float roll = (atan2(normAccel.YAxis, normAccel.ZAxis)*180.0)/M_PI;
+  float leftMotorMultiplier = 1;
+  float rightMotorMultiplier = 1;
+
+
+  
+
+
+
+  //Old code:
   // Read the potentiometer value
   int potValue = analogRead(potPin);
-  
-  // Map the potentiometer value to a speed coefficient (0-255)
-  speedCoefficient = map(potValue, 0, 1023, 0, 255);
-  
+  // Example: Hardcoded speeds
+  leftSpeed = speedCoefficient * motorDirection * leftMotorMultiplier; // Speed for the left motor (0-255)
+  rightSpeed = speedCoefficient * motorDirection * rightMotorMultiplier; // Speed for the right motor (0-255)
+    
   // Read motor toggle button state
   if (digitalRead(motorToggleButtonPin) == LOW) {
     motorsOn = !motorsOn; // Toggle motor state
@@ -85,29 +135,49 @@ void loop() {
     motorDirection *= -1; // Flip motor direction
     delay(200); // Debounce delay
   }
+
+//  leftSpeed = speedCoefficient * motorDirection * leftMotorMultiplier; // Speed for the left motor (0-255)
+//  rightSpeed = speedCoefficient * motorDirection * rightMotorMultiplier; // Speed for the right motor (0-255)
   
-  // If motors are on, set speeds according to potentiometer
-  if (motorsOn) {
-    // Demonstration of turning
-    // Full speed for 3 seconds
-    setMotorSpeeds(255, 255);
-    delay(3000);
+// Print Output
+  Serial.print(" Pitch = ");
+  Serial.print(pitch);
+  Serial.print(" Roll = ");
+  Serial.print(roll);
+  
+  Serial.println();
 
-    // Left at half speed, right at full speed for 2 seconds
-    setMotorSpeeds(127, 255);
-    delay(2000);
+  
+  //PID control:
+  float r = 0; //angle in degrees. from +x. Clockwise angle is positive
+  float e = r - roll;
 
-    // Left stops, right continues at full speed for 1 second
-    setMotorSpeeds(0, 255);
-    delay(1000);
+  float k_p = 10;
+  float u = k_p*e;
 
-    // Right stops, left at full speed for 2 seconds
-    setMotorSpeeds(255, 0);
-    delay(2000);
-  } else {
-    // Turn off motors
-    setMotorSpeeds(0, 0);
+  leftSpeed = 255*motorDirection;
+  rightSpeed = 255*motorDirection;
+
+  if (roll > r + 2){
+    leftSpeed -= abs(u);
+    if (leftSpeed < 0) {leftSpeed = 0;}
+    Serial.print("\t\tTurning Left by u= ");
+    Serial.print(u);
+    Serial.println();
   }
+  else if (roll < r - 2){
+    rightSpeed -= abs(u);
+    if (rightSpeed < 0) {rightSpeed = 0;}
+
+    Serial.print("\t\tTurning Right by u= ");
+    Serial.print(u);
+    Serial.println();
+  }
+  Serial.print("Motor speeds L/R: ");
+  Serial.print(leftSpeed);
+  Serial.print("/");
+  Serial.println(rightSpeed);
   
-  iteration += 1;
+  setMotorSpeeds(leftSpeed, rightSpeed);
+  delay(100);
 }
