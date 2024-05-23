@@ -69,7 +69,6 @@ void setup() {
     Serial.println("Could not find a valid MPU6050 sensor, check wiring!");
     delay(500);
   }
-
   
 }
 
@@ -78,6 +77,8 @@ void loop() {
   time_ms = millis();
   int leftSpeed;
   int rightSpeed;
+  float previousError = 0;
+  
   //Read the accel-orientation
   
   // Read normalized values 
@@ -92,18 +93,6 @@ void loop() {
   float leftMotorMultiplier = 1;
   float rightMotorMultiplier = 1;
 
-  bool hardTurning = false;
-  
-
-
-
-  //Old code:
-  // Read the potentiometer value
-  int potValue = analogRead(potPin);
-  // Example: Hardcoded speeds
-  leftSpeed = speedCoefficient * motorDirection * leftMotorMultiplier; // Speed for the left motor (0-255)
-  rightSpeed = speedCoefficient * motorDirection * rightMotorMultiplier; // Speed for the right motor (0-255)
-    
   // Read motor toggle button state
   if (digitalRead(motorToggleButtonPin) == LOW) {
     motorsOn = !motorsOn; // Toggle motor state
@@ -116,15 +105,12 @@ void loop() {
     delay(200); // Debounce delay
   }
 
-//  leftSpeed = speedCoefficient * motorDirection * leftMotorMultiplier; // Speed for the left motor (0-255)
-//  rightSpeed = speedCoefficient * motorDirection * rightMotorMultiplier; // Speed for the right motor (0-255)
   
 // Print Output
   Serial.print(" Pitch = ");
   Serial.print(pitch);
   Serial.print(" Roll = ");
   Serial.print(roll);
-  
   Serial.println();
 
 
@@ -134,51 +120,42 @@ void loop() {
   const short CCW_isNegative = -1;
   float r = rightReference; //angle in degrees. Up is 0 degrees. Counter Clockwise angle is positive
   float e = r - roll;
-  
-  
-  //Simple Path 
-  if (time_ms < 1000*5){
-    r = rightReference - 90;
-    hardTurning = true;
-    Serial.println(" first 5 s");
-  }else if (time_ms < 1000*7){
-    r = rightReference - 180;
-    hardTurning = false;
-    Serial.println(" next 5 s");
-  }
-
-  if (r > 180){ r -= 360;}
-  if (r < -180){ r += 360;}
-  
-  float u = k_p*e + k_i*integralError;
+  Perform_PID_control(255, e);
 
 
-  leftSpeed = 255*motorDirection;
-  rightSpeed = 255*motorDirection;
-
-  if (CCW_isNegative*roll > r + 2){
-    leftSpeed  -= abs(u);
-    if (hardTurning){
-      rightSpeed += abs(u);
-      Serial.println("Hard turning Left");
-      }
-  }
-  else if (CCW_isNegative*roll < r - 2){
-    rightSpeed -= abs(u);
-    if (hardTurning){
-      leftSpeed  += abs(u);
-      Serial.println("Hard turning Right");
-      }
-  }
+//  if (r > 180){ r -= 360;}
+//  if (r < -180){ r += 360;}
   
-  if (leftSpeed < 0) {leftSpeed = 0;}
-  if (leftSpeed > 255) {leftSpeed = 255;}
-  if (rightSpeed < 0) {rightSpeed = 0;}
-  if (rightSpeed > 255){rightSpeed = 255;}
-  setMotorSpeeds(leftSpeed, rightSpeed);
+//  float u = k_p*e + k_i*integralError;
+
+
+//  if (CCW_isNegative*roll > r + 2){
+//    leftSpeed  -= abs(u);
+//    if (hardTurning){
+//      rightSpeed += abs(u);
+//      Serial.println("Hard turning Left");
+//      }
+//  }
+//  else if (CCW_isNegative*roll < r - 2){
+//    rightSpeed -= abs(u);
+//    if (hardTurning){
+//      leftSpeed  += abs(u);
+//      Serial.println("Hard turning Right");
+//      }
+//  }
 
   integralError += e;
-
+  //Simple Path, not working yet
+//  if (time_ms < 1000*5){
+//    r = rightReference - 90;
+//    hardTurning = true;
+//    Serial.println(" first 5 s");
+//  }else if (time_ms < 1000*7){
+//    r = rightReference - 180;
+//    hardTurning = false;
+//    Serial.println(" next 5 s");
+//  
+  
   Serial.print("Motor speeds L/R: ");
   Serial.print(leftSpeed);
   Serial.print("/");
@@ -186,6 +163,33 @@ void loop() {
   delay(100);
 }
 
+void Perform_PID_control(int defaultSpeed, float error){
+  // For now, I'm only implementing Proportional control
+  // Assume angles increase in CCW direction
+  // Hyperparameters
+  const float MIN_CONTROL = 2; //minimum control to change speed in motors, unitless
+  float leftSpeed, rightSpeed = defaultSpeed; 
+  float k_p = 2;
+  float k_i, k_d = 0;
+
+  //Control input to the motor speed, u
+  float  u_speedControl = k_p*error;
+
+  if (u_speedControl > MIN_CONTROL) {
+    rightSpeed = rightSpeed - u_speedControl;
+  }
+  else if (u_speedControl < MIN_CONTROL){
+    leftSpeed = leftSpeed - u_speedControl;
+  }
+
+  //Do a lazy, inaccurate speed check. Better would to map() the speeds from (0,255)
+  if (leftSpeed < 0) {leftSpeed = 0;}
+  if (leftSpeed > 255) {leftSpeed = 255;}
+  if (rightSpeed < 0) {rightSpeed = 0;}
+  if (rightSpeed > 255){rightSpeed = 255;}
+  
+  setMotorSpeeds(leftSpeed, rightSpeed);
+}
 
 
 // Function to set motor speeds
