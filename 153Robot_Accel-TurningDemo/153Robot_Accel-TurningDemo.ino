@@ -67,6 +67,8 @@ void setMotorSpeeds(int leftSpeed, int rightSpeed) {
   analogWrite(enableRightPin, rightSpeed);
 }
 
+long integralError = 0;
+
 void setup() {
   // Set motor control pins as outputs
   pinMode(enableLeftPin, OUTPUT);
@@ -149,35 +151,46 @@ void loop() {
 
   
   //PID control:
-  float r = -15; //angle in degrees. from +x. Clockwise angle is positive
+  float r = 60; //angle in degrees. from +x. Clockwise angle is positive
   float e = r - roll;
-
+  
+  
   float k_p = 8;
-  float u = k_p*e;
+  float u = k_p*e + 0.0000*integralError;
+
 
   leftSpeed = 255*motorDirection;
   rightSpeed = 255*motorDirection;
 
   if (roll > r + 2){
-    leftSpeed -= abs(u);
-    if (leftSpeed < 0) {leftSpeed = 0;}
+    leftSpeed  -= abs(u);
+    rightSpeed += abs(u);
+
     Serial.print("\t\tTurning Left by u= ");
     Serial.print(u);
     Serial.println();
   }
   else if (roll < r - 2){
     rightSpeed -= abs(u);
-    if (rightSpeed < 0) {rightSpeed = 0;}
+    leftSpeed  += abs(u);
 
     Serial.print("\t\tTurning Right by u= ");
     Serial.print(u);
     Serial.println();
   }
+  if (leftSpeed < 0) {leftSpeed = 0;}
+  if (leftSpeed > 255) {leftSpeed = 255;}
+  if (rightSpeed < 0) {rightSpeed = 0;}
+  if (rightSpeed > 255){rightSpeed = 255;}
+
+  integralError += e;
+//  leftSpeed = 255;
+//  rightSpeed = 255;
+  setMotorSpeeds(leftSpeed, rightSpeed);
+
   Serial.print("Motor speeds L/R: ");
   Serial.print(leftSpeed);
   Serial.print("/");
   Serial.println(rightSpeed);
-  
-  setMotorSpeeds(leftSpeed, rightSpeed);
   delay(10);
 }
