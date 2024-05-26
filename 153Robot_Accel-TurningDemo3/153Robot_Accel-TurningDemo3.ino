@@ -85,31 +85,35 @@ void loop() {
   int leftSpeed;
   int rightSpeed;
   float previousError = 0;
-  
-  //Read the accel-orientation
-  
-  // Read normalized values 
-  Vector normAccel = mpu.readNormalizeAccel();
-
-  // Calculate Pitch & Roll
-//  int pitch = -(atan2(normAccel.XAxis, sqrt(normAccel.YAxis*normAccel.YAxis + normAccel.ZAxis*normAccel.ZAxis))*180.0)/M_PI;
-//  int roll = (atan2(normAccel.YAxis, normAccel.ZAxis)*180.0)/M_PI;
-
-
   float leftMotorMultiplier = 1;
   float rightMotorMultiplier = 1;
+  int angleToTheRight = -90;
+  int newAngle = angleToTheRight;
+  int angleMult = 1;
+  int numCrossedBoard = 0;
 
-  // Read motor toggle button state
-  if (digitalRead(motorToggleButtonPin) == LOW) {
-    motorsOn = !motorsOn; // Toggle motor state
-    delay(200); // Debounce delay
+  int timeToTravelAcross = 5*1000;//time (ms)to travel right/left the width of the board
+  int timeToTravelDown = 3*1000; //time (ms) to travel down by the width of the eraser
+  
+  while (numCrossedBoard < 3){
+    Go_Straight_PID(timeToTravelAcross, newAngle);
+    Rotate_CCW_PID(-90*angleMult);
+    newAngle = newAngle - 90*angleMult;
+    Go_Straight_PID(timeToTravelDown, newAngle);
+    Rotate_CCW_PID(-90*angleMult);
+    angleMult *= -1;
+    newAngle = angleToTheRight+180;
+    if(newAngle > 180){
+      newAngle -= 360;
+    }
+    numCrossedBoard++;
+    Serial.print("Crossed Board");
+    Serial.print(numCrossedBoard);
+    Serial.println(" times");
   }
   
-  // Read direction flip button state
-  if (digitalRead(directionFlipButtonPin) == LOW) {
-    motorDirection *= -1; // Flip motor direction
-    delay(200); // Debounce delay
-  }
+
+  
 
   
 // Print Output
@@ -118,55 +122,11 @@ void loop() {
   Serial.print(" Roll = ");
   Serial.print(getRoll());
   Serial.println();
-
-
-  
-  //PID control:
-  const float rightReference = -90;
-  const short CCW_isNegative = -1;
-  float r = rightReference; //angle in degrees. Up is 0 degrees. Counter Clockwise angle is positive
-  float e = r - getRoll();
-  Perform_PID_control(255, e);
-
-
-//  if (r > 180){ r -= 360;}
-//  if (r < -180){ r += 360;}
-  
-//  float u = k_p*e + k_i*integralError;
-
-
-//  if (CCW_isNegative*roll > r + 2){
-//    leftSpeed  -= abs(u);
-//    if (hardTurning){
-//      rightSpeed += abs(u);
-//      Serial.println("Hard turning Left");
-//      }
-//  }
-//  else if (CCW_isNegative*roll < r - 2){
-//    rightSpeed -= abs(u);
-//    if (hardTurning){
-//      leftSpeed  += abs(u);
-//      Serial.println("Hard turning Right");
-//      }
-//  }
-
-  integralError += e;
-  //Simple Path, not working yet
-//  if (time_ms < 1000*5){
-//    r = rightReference - 90;
-//    hardTurning = true;
-//    Serial.println(" first 5 s");
-//  }else if (time_ms < 1000*7){
-//    r = rightReference - 180;
-//    hardTurning = false;
-//    Serial.println(" next 5 s");
-//  
-  
-  Serial.print("Motor speeds L/R: ");
-  Serial.print(leftSpeed);
-  Serial.print("/");
-  Serial.println(rightSpeed);
-  delay(100);
+  int userInput1 = -1;
+  while (userInput1 != 2){
+    Serial.println("Type 2 to restart");
+    int userInput1 = Serial.parseInt();
+  }
 }
 
 void Go_Straight_PID(int duration_ms, float directionAngle){
@@ -199,11 +159,13 @@ void Go_Straight_PID(int duration_ms, float directionAngle){
     if (rightSpeed < 0) {rightSpeed = 0;}
     if (rightSpeed > 255){rightSpeed = 255;}
     setMotorSpeeds(leftSpeed, rightSpeed);
+    Serial.print(leftSpeed);
+    Serial.print(" / ");
+    Serial.println(rightSpeed);
   }
 }
 
 void Rotate_CCW_PID(float directionAngle){
-  const short CCW_isNegative = 1; //set to 1 or -1
   long timeStart = millis();
   float startAngle = getRoll();
   float leftSpeed, rightSpeed = 0; 
@@ -229,42 +191,51 @@ void Rotate_CCW_PID(float directionAngle){
     
     }
     setMotorSpeeds(leftSpeed, rightSpeed);
+    Serial.print(leftSpeed);
+    Serial.print(" / ");
+    Serial.println(rightSpeed);
     if (e < MIN_ERROR){
       notDoneTurning = false;
     }
+    this_integralError += e;
   }//end while loop
-  
+  float timeTaken = (millis() - timeStart)/1000.0;
+  float angleChanged = getRoll() - startAngle;
+  Serial.print("Angle rotated by (degrees): ");
+  Serial.println(angleChanged);
+  Serial.print("Time taken to rotate (seconds): ");
+  Serial.println(timeTaken);
 }//end Rotate_CCW_PID() function
 
 
 
-void Perform_PID_control(int defaultSpeed, float error){//don't use
-  // For now, I'm only implementing Proportional control
-  // Assume angles increase in CCW direction
-  // Hyperparameters
-  const float MIN_CONTROL = 2; //minimum control to change speed in motors, unitless
-  float leftSpeed, rightSpeed = defaultSpeed; 
-  float k_p = 2;
-  float k_i, k_d = 0;
-
-  //Control input to the motor speed, u
-  float  u_speedControl = k_p*error;
-
-  if (u_speedControl > MIN_CONTROL) {
-    rightSpeed = rightSpeed - u_speedControl;
-  }
-  else if (u_speedControl < MIN_CONTROL){
-    leftSpeed = leftSpeed - u_speedControl;
-  }
-
-  //Do a lazy, inaccurate speed check. Better would to map() the speeds from (0,255)
-  if (leftSpeed < 0) {leftSpeed = 0;}
-  if (leftSpeed > 255) {leftSpeed = 255;}
-  if (rightSpeed < 0) {rightSpeed = 0;}
-  if (rightSpeed > 255){rightSpeed = 255;}
-  
-  setMotorSpeeds(leftSpeed, rightSpeed);
-}
+//void Perform_PID_control(int defaultSpeed, float error){//don't use
+//  // For now, I'm only implementing Proportional control
+//  // Assume angles increase in CCW direction
+//  // Hyperparameters
+//  const float MIN_CONTROL = 2; //minimum control to change speed in motors, unitless
+//  float leftSpeed, rightSpeed = defaultSpeed; 
+//  float k_p = 2;
+//  float k_i, k_d = 0;
+//
+//  //Control input to the motor speed, u
+//  float  u_speedControl = k_p*error;
+//
+//  if (u_speedControl > MIN_CONTROL) {
+//    rightSpeed = rightSpeed - u_speedControl;
+//  }
+//  else if (u_speedControl < MIN_CONTROL){
+//    leftSpeed = leftSpeed - u_speedControl;
+//  }
+//
+//  //Do a lazy, inaccurate speed check. Better would to map() the speeds from (0,255)
+//  if (leftSpeed < 0) {leftSpeed = 0;}
+//  if (leftSpeed > 255) {leftSpeed = 255;}
+//  if (rightSpeed < 0) {rightSpeed = 0;}
+//  if (rightSpeed > 255){rightSpeed = 255;}
+//  
+//  setMotorSpeeds(leftSpeed, rightSpeed);
+//}
 
 
 // Function to set motor speeds
