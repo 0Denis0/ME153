@@ -15,7 +15,7 @@ MPU6050 mpu;
 const float k_p = 8;
 const float k_i = 1;
 const float k_d = 0;
-const float k_p_turning = 2;
+const float k_p_turning = 1;
 const float k_i_turning = 0;
 const float k_d_turning = 0;
 float angleReferenceGlobal = 0;
@@ -135,7 +135,7 @@ void Go_Straight_PID(int duration_ms, float directionAngle){
   //directionAngle is the desired angle you want to go to. 0 deg is normal to accelerometer
   
   long timeStart = millis();
-  const int defaultSpeed = 255;
+  const int defaultSpeed = 50;
   float leftSpeed, rightSpeed; 
   float r = directionAngle; //angle in degrees. Up is 0 degrees. Counter Clockwise angle is positive
   const float MIN_CONTROL = 0.8;
