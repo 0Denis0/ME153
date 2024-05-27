@@ -15,12 +15,12 @@ MPU6050 mpu;
 const float k_p = 8;
 const float k_i = 1;
 const float k_d = 0;
-const float k_p_turning = 10;
+const float k_p_turning = 2;
 const float k_i_turning = 0;
 const float k_d_turning = 0;
 float angleReferenceGlobal = 0;
-const short CCW_isNegative = -1;
-
+const short CCW_isNegative = -1; //set -1 if CCW is negative
+const short ANGLE_IS_UP = 0; //what angle the robot receives when goes upward
 
 
 // Define motor control pins for the left motor
@@ -190,6 +190,10 @@ void Rotate_CCW_PID(float directionAngle){
       rightSpeed -= u_speedControl;
     
     }
+    if (leftSpeed < 0) {leftSpeed = 0;}
+    if (leftSpeed > 255) {leftSpeed = 255;}
+    if (rightSpeed < 0) {rightSpeed = 0;}
+    if (rightSpeed > 255){rightSpeed = 255;}
     setMotorSpeeds(leftSpeed, rightSpeed);
     Serial.print(leftSpeed);
     Serial.print(" / ");
