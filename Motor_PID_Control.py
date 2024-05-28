@@ -22,7 +22,37 @@ import math
 # CCW_ANGLE_DIRECTION = 1; #set to 1 if CCW is negative
 
 #phi is the raw angle measurement (deg)
-def calcMotorSpeed_PID(x, y, phi, x_desired, y_desired, integralError, derivativeError):
+def calcMotorSpeed_PID(x, y, phi, x_desired, y_desired, CCW_ANGLE_DIRECTION = 1, integralError = 0, derivativeError = 0):
+    '''
+    Parameters
+    ----------
+    x : float
+        current x position, positive is right.
+    y : float
+        current y position, positive is up.
+    phi : float
+        current direction, change CCW_ANGLE_DIRECTION based on positive direction.
+    x_desired : float
+        Desired x position.
+    y_desired : float
+        Desired y position.
+    CCW_ANGLE_DIRECTION: 1 or -1, default is 1
+        Input -1 if rotating CCW decreases angle reading
+    integralError : TYPE, optional
+        DESCRIPTION. The default is 0.
+    derivativeError : TYPE, optional
+        DESCRIPTION. The default is 0.
+
+    Returns
+    -------
+    leftSpeed : TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+    TYPE
+        DESCRIPTION.
+
+    '''
     # Constant Parameters: 
     TRACKING_TOLERANCE = 0.1; #an outside program needs to change the (x_desired,y_desired) 
     kp = 8 #proportional constant
@@ -31,13 +61,14 @@ def calcMotorSpeed_PID(x, y, phi, x_desired, y_desired, integralError, derivativ
     ANGLE_OF_GOING_RIGHT = -90; #angle (deg) the robot detects when moving right. Set to -90 if up is 0, CCW is positive.
     DEFAULT_SPEED = 255 #the regular speed the robot runs at
     MAX_SPEED = 255 #exactly 255
+    MIN_SPEED = -255;
     CCW_ANGLE_DIRECTION = 1; #set to 1 if CCW is negative
     ######
     leftSpeed = DEFAULT_SPEED
     rightSpeed = DEFAULT_SPEED
     dx = x_desired - x;
     dy = y_desired - y;
-    angleToDesired = math.atan2(dy, dx); #
+    angleToDesired = math.degrees(math.atan2(dy, dx)); #
     currentAngle = phi - ANGLE_OF_GOING_RIGHT
     
     #Positive error means need to move CCW
@@ -46,11 +77,67 @@ def calcMotorSpeed_PID(x, y, phi, x_desired, y_desired, integralError, derivativ
     
     u = kp * error + ki * integralError + kd * derivativeError
     
-    leftSpeed = max(0, min(MAX_SPEED, leftSpeed - u)) 
-    rightSpeed = max(0, min(MAX_SPEED, rightSpeed + u))
+    leftSpeed = max(MIN_SPEED, min(MAX_SPEED, leftSpeed - u)) 
+    rightSpeed = max(MIN_SPEED, min(MAX_SPEED, rightSpeed + u))
     return (leftSpeed, rightSpeed) #return a tuple, of the new motor speeds
 
 
+#phi is the raw angle measurement (deg)
+def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE_DIRECTION = 1, integralError = 0, derivativeError = 0):
+    '''
+    Parameters
+    ----------
+    robotPoseTuple : Tuple of floats
+        (x, y, phi) Tuple describing the robot's current position and heading: .
+    desiredPointTuple : Tuple of floats
+        (x_desired, y_desired) Position of robot's current point it's tracking towards.
+    CCW_ANGLE_DIRECTION: 1 or -1, default is 1
+        Input -1 if rotating CCW decreases angle reading
+    integralError : float, optional
+        Integral Error, whatever way you like to calculate. The default is 0.
+    derivativeError : float, optional
+        Derivative Error, whatever way you like to calculate. The default is 0.
+
+    Returns
+    -------
+    motorSpeedTuple : Tuple of Floats
+        (leftSpeed, rightSpeed) speeds as float vary from -255 to 255.
+    '''
+    # Process Input
+    x = currentPoseTuple[0];
+    y = currentPoseTuple[1];
+    phi = currentPoseTuple[2];
+    x_desired = desiredPositionTuple[0];
+    y_desired = desiredPositionTuple[1];
+    # Constant Parameters: 
+    kp = 8 #proportional constant
+    ki = 0 #integralError constant
+    kd = 0 #derivativeError constant
+    ANGLE_OF_GOING_RIGHT = -90; #angle (deg) the robot detects when moving right. Set to -90 if up is 0, CCW is positive.
+    DEFAULT_SPEED = 255 #the regular speed the robot runs at
+    MAX_SPEED = 255 #exactly 255
+    MIN_SPEED = -255;
+    CCW_ANGLE_DIRECTION = 1; #set to 1 if CCW is negative
+    ######
+
+    # Same code as before
+    dx = x_desired - x;
+    dy = y_desired - y;
+    leftSpeed = DEFAULT_SPEED
+    rightSpeed = DEFAULT_SPEED
+    angleToDesired = math.degrees(math.atan2(dy, dx)); #
+    currentAngle = phi - ANGLE_OF_GOING_RIGHT
+    
+    #Positive error means need to move CCW
+    error = angleToDesired - currentAngle;
+    error = CCW_ANGLE_DIRECTION * error;
+    
+    u = kp * error + ki * integralError + kd * derivativeError
+    
+    leftSpeed = max(MIN_SPEED, min(MAX_SPEED, leftSpeed - u)) 
+    rightSpeed = max(MIN_SPEED, min(MAX_SPEED, rightSpeed + u))
+    motorSpeedTuple = (leftSpeed, rightSpeed)
+    return motorSpeedTuple #return a tuple, of the new motor speeds
 
 # # Unused Helper Function:
 # def calculate_angle_to_desired(x, y, x_desired, y_desired):
@@ -65,7 +152,23 @@ def calcMotorSpeed_PID(x, y, phi, x_desired, y_desired, integralError, derivativ
 #     return output
 
 
+# Tester Code
+r = 10
+dAngle = 45
+angle = 180
+while angle >= -180:
+    x_desired = math.cos(angle*math.pi / 180)
+    y_desired = math.sin(angle*math.pi / 180)
+    #out = calcMotorSpeed_PID(0, 0, 0, x_desired, y_desired);
+    out = calcMotorSpeed_PID_TupleIn((0,0, 0), (x_desired, y_desired))
+    leftSpeed = out[0]
+    rightSpeed = out[1]
+    
+    #string = "Go to: \t" + str(round(x_desired, 2)) + ", " + str(round(y_desired, 2))
+    string = "";
+    string2 = " angle = " + str(angle) + ")"
+    string3 = "\nMotor Speeds: "
+    str4 = str(round(leftSpeed, 2)) + ", " + str(round(rightSpeed, 2))
+    print(string+string2+string3+str4 + "\n");
+    angle -= dAngle
 
-
-
-print(calcMotorSpeed_PID(0, 0, -90, 10, 0, 0, 0));
