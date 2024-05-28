@@ -1,6 +1,28 @@
 import matplotlib.pyplot as plt
 
-def discretize_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds=2):
+def generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds=2):
+    '''
+    Parameters
+    ----------
+    xTopLeft : float
+        X coordinate of Top Left (or bottom left) point of bounding box.
+    yTopLeft : float
+        Y coordinate of Top Left (or bottom left) point of bounding box.
+    xBottomRight : float
+        X coordinate of Bottom Right (or top right) point of bounding box.
+    yBottomRight : float
+        X coordinate of Bottom Right (or top right) point of bounding box.
+    L : float
+        Distance between zig zags. Input the width of the robot or something.
+    ds : float, optional
+        The distance between points. The default is 2 units.
+
+    Returns
+    -------
+    points : List of tuples, where each row/tuple is (x,y) of that point along path
+        DESCRIPTION.
+
+    '''
     points = []
     x_current = xTopLeft
     y_current = yTopLeft
@@ -60,7 +82,7 @@ yBottomRight = 200
 L = 20
 ds = 2
 
-lawnmower_points = discretize_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds)
+lawnmower_points = generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds)
 
 # Plotting the points with matplotlib
 plt.figure(figsize=(8, 8))
