@@ -74,12 +74,12 @@ def calcMotorSpeed_PID(x, y, phi, x_desired, y_desired, CCW_ANGLE_DIRECTION = 1,
     #Positive error means need to move CCW
     error = angleToDesired - currentAngle;
     error = CCW_ANGLE_DIRECTION * error;
-    
+    integralError += error
     u = kp * error + ki * integralError + kd * derivativeError
     
     leftSpeed = max(MIN_SPEED, min(MAX_SPEED, leftSpeed - u)) 
     rightSpeed = max(MIN_SPEED, min(MAX_SPEED, rightSpeed + u))
-    return (leftSpeed, rightSpeed) #return a tuple, of the new motor speeds
+    return (leftSpeed, rightSpeed, integralError) #return a tuple, of the new motor speeds
 
 
 #phi is the raw angle measurement (deg)
@@ -131,6 +131,7 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
     #Positive error means need to move CCW
     error = angleToDesired - currentAngle;
     error = CCW_ANGLE_DIRECTION * error;
+    integralError += error;
     
     u = kp * error + ki * integralError + kd * derivativeError
     
