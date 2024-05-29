@@ -140,7 +140,7 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
     rightSpeedRAW = rightSpeed + u    
     leftSpeed = max(MIN_SPEED, min(MAX_SPEED, leftSpeed - u)) 
     rightSpeed = max(MIN_SPEED, min(MAX_SPEED, rightSpeed + u))
-    motorSpeedTuple = (leftSpeed, rightSpeed)
+    motorSpeedTuple = (leftSpeed, rightSpeed, integralError)
     
     if (verbose or howVerbose > 0):
         if (howVerbose >= 1):
