@@ -93,6 +93,11 @@ ds = 2
 
 lawnmower_points = generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds, 0)
 
+for i in range(1,10):
+    thisPoint = lawnmower_points[i]
+    print(thisPoint)
+
+
 # Plotting the points with matplotlib
 plt.figure(figsize=(8, 8))
 for idx, (x, y) in enumerate(lawnmower_points):
