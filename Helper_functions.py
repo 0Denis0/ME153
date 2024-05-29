@@ -5,7 +5,7 @@ Created on Wed May 29 00:30:57 2024
 @author: 88chr
 """
 import numpy as np
-
+import matplotlib as plt
 def flattenNestedListToTuple(nestedListOfNumbers):
     array = np.array(nestedListOfNumbers)
 
@@ -28,6 +28,9 @@ def flattenNestedListToTuple(nestedListOfNumbers):
 #             print("it's a none")
 #         return defaultTuple
 #     return thisTuple
+
+
+
 
 
 def tryToChangeTuple(thisTuple):
