@@ -140,21 +140,21 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
     rightSpeedRAW = rightSpeed + u    
     leftSpeed = max(MIN_SPEED, min(MAX_SPEED, leftSpeed - u)) 
     rightSpeed = max(MIN_SPEED, min(MAX_SPEED, rightSpeed + u))
-    motorSpeedTuple = (leftSpeed, rightSpeed)
+    motorSpeedTuple = (leftSpeed, rightSpeed, integralError)
     
-    if (verbose or howVerbose > 0):
-        if (howVerbose >= 1):
-            str1 = "Motor PID Verbose Output:"
-            # Define a tuple
-            str1 += "\n\tError = " + str(error) + " degrees"
-            str1 += "\n\tCCW direction sense: " + str(CCW_ANGLE_DIRECTION)
-            str1 += "\n\tControl u \t= " + str(u)
-            str1 += "\n\tLeft/Right \t= " + str(leftSpeed) + "/" + str(rightSpeed)
-            str1 += "\n\tRaw Speed \t= "+ str(leftSpeedRAW) + "/" + str(rightSpeedRAW)
+    if (verbose and howVerbose > 0):
+        str1 = "Motor PID Verbose Output:"
         if (howVerbose >= 2):
-            str1 += "\n\tRaw Current (x,y,phi): " + str(currentPoseTuple)
-            str1 += "\n\tRaw Desired (x_des,y_des)" + str(desiredPositionTuple)
-            str1 += "\n\tCalculated current angle: " + str(currentAngle)
+            str1 += "\n\tRaw Current Pose \t(x,y,phi) = " + str(currentPoseTuple)
+            str1 += "\n\tRaw Desired Pos\t(x_des,y_des) = " + str(desiredPositionTuple)
+            str1 += "\n\tCalculated current angle = \t" + str(round(currentAngle,3)) + " degrees"
+        if (howVerbose >= 1):
+            # Define a tuple
+            str1 += "\n\tError \t\t= " + str(round(error, 3)) + " degrees"
+            str1 += "\n\tCCW direction sense = " + str(CCW_ANGLE_DIRECTION)
+            str1 += "\n\tControl u \t = " + str(round(u, 4))
+            str1 += "\n\tRaw Speed \t = "+ str(round(leftSpeedRAW, 3)) + "\t/ " + str(round(rightSpeedRAW, 3))
+        str1 += "\n\tOutput Speed = " + str(round(leftSpeed, 2)) + "\t/ " + str(round(rightSpeed, 2))
         print(str1)
     return motorSpeedTuple #return a tuple, of the new motor speeds
 
@@ -229,7 +229,8 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
 #     #self.prev_error = error
 #     return output
 
-
+npA = np.array((1, 2, 3))
+npB = np.array((7, 9))
 # Tester Code
 r = 10
 dAngle = 15
@@ -238,7 +239,7 @@ while angle >= -180:
     x_desired = math.cos(angle*math.pi / 180)
     y_desired = math.sin(angle*math.pi / 180)
     #out = calcMotorSpeed_PID(0, 0, 0, x_desired, y_desired);
-    out = calcMotorSpeed_PID_TupleIn((0,0, 0), (x_desired, y_desired), verbose = True)
+    out = calcMotorSpeed_PID_TupleIn(npA, npB, verbose = True, howVerbose = 2)
     leftSpeed = out[0]
     rightSpeed = out[1]
     
