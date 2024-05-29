@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-def generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds=2):
+def generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds=2, N_to_skip = 0):
     '''
     Parameters
     ----------
@@ -16,7 +16,9 @@ def generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, d
         Distance between zig zags. Input the width of the robot or something.
     ds : float, optional
         The distance between points. The default is 2 units.
-
+    N_to_skip: integer, optional
+        The number of points the robot has already gone too. Another program needs to track this. Program will skip first N_to_skip points in the lawnmower path
+        If negative, function will return the last N points along the path.
     Returns
     -------
     points : List of tuples, where each row/tuple is (x,y) of that point along path
@@ -59,11 +61,14 @@ def generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, d
                     break
 
         # Vertical movement
+        # Idk why ChatGPT put these if statements
         y_next = y_current + y_direction * L
         if y_direction == 1 and y_next >= yBottomRight:
             y_next = yBottomRight
         elif y_direction == -1 and y_next <= yBottomRight:
             y_next = yBottomRight
+
+        
         while (y_direction == 1 and y_current < y_next) or (y_direction == -1 and y_current > y_next):
             y_current += y_direction * ds
             if (y_direction == 1 and y_current > y_next) or (y_direction == -1 and y_current < y_next):
@@ -72,6 +77,10 @@ def generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, d
 
         direction *= -1
 
+    if (N_to_skip != 0):
+        lastNPoints = points[N_to_skip:]
+        return lastNPoints
+    
     return points
 
 # Example usage:
@@ -82,7 +91,7 @@ yBottomRight = 200
 L = 20
 ds = 2
 
-lawnmower_points = generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds)
+lawnmower_points = generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds, 0)
 
 # Plotting the points with matplotlib
 plt.figure(figsize=(8, 8))
