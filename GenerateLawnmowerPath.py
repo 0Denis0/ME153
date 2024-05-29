@@ -82,6 +82,40 @@ def generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, d
         return lastNPoints
     
     return points
+def plotPath(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds):
+    # xTopLeft = 0
+    # yTopLeft = 0
+    # xBottomRight = 100
+    # yBottomRight = 200
+    # L = 20
+    # ds = 2
+    
+    lawnmower_points = generate_lawnmower_path(xTopLeft, yTopLeft, xBottomRight, yBottomRight, L, ds, 0)
+    
+    for i in range(1,10):
+        thisPoint = lawnmower_points[i]
+        print(thisPoint)
+    
+    
+    # Plotting the points with matplotlib
+    plt.figure(figsize=(8, 8))
+    for idx, (x, y) in enumerate(lawnmower_points):
+        plt.plot(x, y, 'bo')  # Plot the point
+        plt.text(x, y, str(idx), fontsize=9, ha='right')  # Label the point with its index
+    
+    plt.plot(xTopLeft, yTopLeft, 'rx')
+    plt.plot(xBottomRight, yBottomRight, 'gx')
+    
+    # Set plot limits
+    plt.xlim(xTopLeft - 10, xBottomRight + 10)
+    plt.ylim(min(yTopLeft, yBottomRight) - 10, max(yTopLeft, yBottomRight) + 10)
+    
+    # Set labels and title
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Discretized Lawnmower Path with Point Indices')
+    plt.grid(True)
+    plt.show()
 
 # Example usage:
 xTopLeft = 0

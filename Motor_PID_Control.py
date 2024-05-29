@@ -83,9 +83,8 @@ def calcMotorSpeed_PID(x, y, phi, x_desired, y_desired, CCW_ANGLE_DIRECTION = 1,
 
 
 #phi is the raw angle measurement (deg)
-def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE_DIRECTION = 1, integralError = 0, derivativeError = 0):
-    '''
-    Parameters
+def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE_DIRECTION = 1, Y_UP_SENSE = 1, integralError = 0, derivativeError = 0):
+    '''Parameters
     ----------
     robotPoseTuple : Tuple of floats
         (x, y, phi) Tuple describing the robot's current position and heading: .
@@ -117,12 +116,14 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
     DEFAULT_SPEED = 255 #the regular speed the robot runs at
     MAX_SPEED = 255 #exactly 255
     MIN_SPEED = -255;
-    CCW_ANGLE_DIRECTION = 1; #set to 1 if CCW is negative
     ######
 
     # Same code as before
     dx = x_desired - x;
     dy = y_desired - y;
+    if (Y_UP_SENSE == -1):
+        dy = -dy;
+    
     leftSpeed = DEFAULT_SPEED
     rightSpeed = DEFAULT_SPEED
     angleToDesired = math.degrees(math.atan2(dy, dx)); #
@@ -155,7 +156,7 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
 
 # Tester Code
 r = 10
-dAngle = 45
+dAngle = 15
 angle = 180
 while angle >= -180:
     x_desired = math.cos(angle*math.pi / 180)
@@ -170,6 +171,6 @@ while angle >= -180:
     string2 = " angle = " + str(angle) + ")"
     string3 = "\nMotor Speeds: "
     str4 = str(round(leftSpeed, 2)) + ", " + str(round(rightSpeed, 2))
-    print(string+string2+string3+str4 + "\n");
+    print(string+string2+string3+str4 + "");
     angle -= dAngle
 
