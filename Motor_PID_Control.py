@@ -117,7 +117,7 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
     MAX_SPEED = 255.0 #exactly 255
     MIN_SPEED = -255.0;
     ######
-
+    
     # Same code as before
     dx = x_desired - x;
     dy = y_desired - y;
@@ -126,7 +126,7 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
     
     leftSpeed = DEFAULT_SPEED
     rightSpeed = DEFAULT_SPEED
-    # angleToDesired = math.degrees(math.atan2(dy, dx)); #
+    angleToDesired = math.degrees(math.atan2(dy, dx)); #
     currentAngle = phi - ANGLE_OF_GOING_RIGHT
     
     #Positive error means need to move CCW
@@ -147,22 +147,27 @@ def calcMotorSpeed_PID_TupleIn(currentPoseTuple, desiredPositionTuple, CCW_ANGLE
     
     if (verbose and howVerbose > 0):
         str1 = "Motor PID Verbose Output:"
-        if (howVerbose >= 2):
+        if (howVerbose % 100 >= 2):
             str1 += "\n\tRaw Current Pose \t(x,y,phi) = " + str(currentPoseTuple)
             str1 += "\n\tRaw Desired Pos\t(x_des,y_des) = " + str(desiredPositionTuple)
             str1 += "\n\tCalculated current angle = \t" + str(round(currentAngle,3)) + " degrees"
-        if (howVerbose >= 1):
+        if (howVerbose % 100 >= 1):
             # Define a tuple
             str1 += "\n\tError \t\t= " + str(round(error, 3)) + " degrees"
             str1 += "\n\tCCW direction sense = " + str(CCW_ANGLE_DIRECTION)
             str1 += "\n\tControl u \t = " + str(round(u, 4))
             str1 += "\n\tRaw Speed \t = "+ str(round(leftSpeedRAW, 3)) + "\t/ " + str(round(rightSpeedRAW, 3))
         str1 += "\n\tOutput Speed = " + str(round(leftSpeed, 2)) + "\t/ " + str(round(rightSpeed, 2))
+        if (howVerbose >= 100):
+            print("Warning: Plotting every time can be slow")
+            plot_vectors(currentPoseTuple, desiredPositionTuple, y_direction= Y_UP_SENSE, CCW_direction=CCW_ANGLE_DIRECTION, ANGLE_OF_GOING_RIGHT=ANGLE_OF_GOING_RIGHT)
+        
         print(str1)
+
     return motorSpeedTuple #return a tuple, of the new motor speeds
 
 
-def calcAngleError(currentPoseTuple, desiredPositionTuple, CCW_ANGLE_DIRECTION = -1, Y_UP_SENSE = -1, ANGLE_OF_GOING_RIGHT = 0):
+def calcAngleError(currentPoseTuple, desiredPositionTuple, CCW_ANGLE_DIRECTION = -1, Y_UP_SENSE = -1, ANGLE_OF_GOING_RIGHT = 0, howVerbose = 0):
     x = currentPoseTuple[0];
     y = currentPoseTuple[1];
     phi = currentPoseTuple[2];
@@ -191,8 +196,6 @@ def calcAngleError(currentPoseTuple, desiredPositionTuple, CCW_ANGLE_DIRECTION =
         error = error - 360
     elif (error < -180):
         error = error + 360
-    
-    
     return error
 
 def plot_vectors(vector, point_T, origin=(0, 0), y_direction=-1, CCW_direction=-1, ANGLE_OF_GOING_RIGHT=0, x_lim=None, y_lim=None, arrowLength = 1, plotString = None):
